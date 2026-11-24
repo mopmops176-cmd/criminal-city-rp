@@ -1,0 +1,35 @@
+name: Build Criminal City RP APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract project
+        run: |
+          unzip -q Criminal_City_RP_Android_Phone_Build.zip -d project
+          DIR=$(dirname "$(find project -name settings.gradle | head -1)")
+          cp -r "$DIR"/* .
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build APK
+        run: gradle assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Criminal-City-RP-APK
+          path: app/build/outputs/apk/debug/*.apk
