@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Criminal City RP — Street Edition</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#111;color:#fff;font:13px system-ui,sans-serif;user-select:none;-webkit-user-select:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.h{position:fixed;pointer-events:none;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 4px #000}
+#tl{left:10px;top:calc(8px + env(safe-area-inset-top,0px));line-height:1.45;font-size:13px}
+#tr{right:10px;top:calc(8px + env(safe-area-inset-top,0px));text-align:right;line-height:1.45}
+.bar{width:120px;height:7px;background:rgba(0,0,0,.55);border-radius:4px;overflow:hidden}.bar i{display:block;height:100%;background:#e5483f}
+#chat{left:10px;top:calc(70px + env(safe-area-inset-top,0px));width:min(560px,92vw);pointer-events:none;font-size:15px;font-weight:700}
+#log{max-height:200px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-start}
+#log div{margin-top:1px;word-wrap:break-word}.adm{color:#ff5a4a}.sys{color:#7ee08a}.me{color:#c9a2e8}.pay{color:#8fe3a2}.bad{color:#ff8a8a}
+#cin{display:none;width:100%;margin-top:4px;padding:7px 9px;border-radius:6px;border:1px solid #666;background:rgba(0,0,0,.75);color:#fff;font-size:15px;outline:none;pointer-events:auto}
+#pr{left:50%;bottom:90px;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:5px 12px;border-radius:8px;display:none;font-size:14px}
+#ts{left:50%;top:22%;transform:translateX(-50%);font-size:20px;font-weight:700;text-align:center;opacity:0;transition:opacity .3s}
+#sp{left:50%;bottom:30px;transform:translateX(-50%);font-size:20px;font-weight:700;display:none}
+#touch{position:fixed;inset:0;pointer-events:none;display:none}
+#joy{position:absolute;left:18px;bottom:calc(70px + env(safe-area-inset-bottom,0px));width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.3);pointer-events:auto;touch-action:none}
+#kn{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.35)}
+.tb{position:absolute;width:56px;height:56px;border-radius:50%;background:rgba(0,0,0,.5);border:2px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-weight:700;pointer-events:auto;touch-action:none}
+#st{position:fixed;inset:0;z-index:9;background:linear-gradient(160deg,#0e1520,#1b2a3a 60%,#2a1e30);display:flex;align-items:center;justify-content:center;padding:14px}
+#sb{width:min(440px,100%)}#sb h1{margin:0 0 6px;font-size:30px}#sb h1 span{color:#ff5a5a}#sb p,.k{color:#b8c4d2;line-height:1.45}
+#nick{width:100%;padding:12px;border-radius:8px;border:1px solid #4b5b70;background:#101822;color:#fff;font-size:16px;margin-top:6px;outline:none}
+#go{width:100%;margin-top:10px;padding:13px;border-radius:8px;border:0;background:#e5483f;color:#fff;font-size:16px;font-weight:700}
+#er{color:#ff8a8a;min-height:18px;margin-top:4px}.k{font-size:12px;background:rgba(255,255,255,.05);padding:8px 10px;border-radius:8px;margin-top:10px}
+
+#cityMenu{position:fixed;right:10px;top:82px;z-index:5;width:min(230px,62vw);padding:10px;background:rgba(8,14,22,.88);border:1px solid #64748b;border-radius:12px;display:none;backdrop-filter:blur(8px);box-shadow:0 8px 28px #0008;pointer-events:auto}
+#cityMenu button,#menuToggle{border:1px solid #64748b;background:#1c2b3a;color:#fff;border-radius:8px;padding:9px 10px;font-weight:700}
+#cityMenu button{width:100%;margin:3px 0;text-align:left}#cityMenu button:active,#menuToggle:active{background:#a33}
+#menuToggle{position:fixed;right:12px;top:44%;z-index:6;pointer-events:auto;font-size:12px}
+#mini{position:fixed;right:10px;bottom:12px;width:130px;height:130px;border:2px solid #dbeafe;border-radius:10px;background:#101820d9;z-index:3;pointer-events:none}
+#statsExtra{position:fixed;left:10px;bottom:12px;padding:6px 9px;border-radius:8px;background:#0009;color:#fff;font-size:11px;pointer-events:none}
+@media(max-width:600px){#mini{width:104px;height:104px;bottom:12px}#menuToggle{top:42%;right:8px;padding:8px}}
+</style></head><body>
+<canvas id="c"></canvas><div style="position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 58%,rgba(0,0,0,.4) 100%)"></div>
+<div class="h" id="tl"></div><div class="h" id="tr"></div>
+<div class="h" id="chat"><div id="log"></div><input id="cin" maxlength="120" autocomplete="off" placeholder="Сообщение или /me, /do, /s"></div>
+<div class="h" id="pr"></div><div class="h" id="ts"></div><div class="h" id="sp"></div>
+<div id="touch"><div id="joy"><div id="kn"></div></div>
+<div class="tb" id="bE" style="right:16px;bottom:150px">E</div><div class="tb" id="bF" style="right:84px;bottom:100px">F</div>
+<div class="tb" id="bT" style="right:16px;bottom:84px">💬</div><div class="tb" id="bH" style="right:150px;bottom:60px;font-size:11px">СТОП</div></div>
+
+<button id="menuToggle">ГОРОД ☰</button>
+<div id="cityMenu">
+ <b style="display:block;margin:2px 4px 8px">МЕНЮ ГОРОДА</b>
+ <button id="mGarage">🚘 Гараж — получить авто ($500)</button>
+ <button id="mJob">📦 Работа / доставка</button>
+ <button id="mBank">🏦 Банк — положить $500</button>
+ <button id="mSkin">👕 Сменить одежду</button>
+ <button id="mSave">💾 Сохранить прогресс</button>
+ <button id="mClose">Закрыть меню</button>
+</div>
+<canvas id="mini" width="260" height="260"></canvas>
+<div id="statsExtra">Город: Los Santos District · День 1</div>
+<div id="st"><div id="sb"><h1>CRIMINAL <span>CITY</span> RP 3D</h1>
+<p>Онлайн-город в 3D: открытый мир, машины, работа курьером, PayDay и другие игроки в реальном времени.</p>
+<label>Ник в формате Имя_Фамилия</label><input id="nick" maxlength="24" value="Ivan_Petrov" autocomplete="off" spellcheck="false">
+<div id="er"></div><button id="go">Войти на сервер</button>
+<div class="k"><b>Управление:</b> WASD / стрелки — движение, Shift — бег, F — сесть/выйти из машины, E — действие у Мэрии и доставка, Пробел — ручник, T — чат, мышь/палец на экране — камера.<br><b>Старт:</b> идите к Мэрии (золотое здание рядом), нажмите E и станьте курьером. Угоняйте любые машины на дорогах.</div></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
+// ---------- расширенная RP-система: меню, банк, гараж, мини-карта, цикл суток ----------
+S.bank=S.bank||0;S.skin=S.skin||0;S.day=1;
+const menu=$('cityMenu'),mini=$('mini'),mx=mini.getContext('2d');
+$('menuToggle').onclick=()=>menu.style.display=menu.style.display==='block'?'none':'block';
+$('mClose').onclick=()=>menu.style.display='none';
+function nearMayor(){return Math.hypot(me.x-MAYOR.x,me.z-MAYOR.z)<34}
+function saveNow(){try{localStorage.setItem('ccrp3d_'+S.name,JSON.stringify({cash:S.cash,lvl:S.lvl,done:S.done,bank:S.bank,skin:S.skin}));toast('Прогресс сохранён')}catch(e){toast('Не удалось сохранить')}}
+$('mSave').onclick=saveNow;
+$('mBank').onclick=()=>{if(!nearMayor()){toast('Банк находится в здании Мэрии');return}if(S.cash>=500){S.cash-=500;S.bank+=500;line('Банк: внесено $500. Баланс: '+money(S.bank),'sys')}else if(S.bank>=500){S.bank-=500;S.cash+=500;line('Банк: снято $500. Баланс: '+money(S.bank),'pay')}else toast('Нужно иметь $500 наличными или на счёте');saveNow()};
+$('mJob').onclick=()=>{if(!nearMayor()){toast('Подойдите к Мэрии, чтобы устроиться на работу');return}S.job=!S.job;if(S.job){next();toast('Вы устроились курьером')}else{clearM();toast('Вы уволились')};menu.style.display='none'};
+$('mGarage').onclick=()=>{if(S.cash<500){toast('Для покупки служебного авто нужно $500');return}S.cash-=500;let c=newCar(pk([0x174a78,0x8d2020,0x20252b,0xc7a52a,0xe6e6e6]));c.ai=false;c.x=me.x+Math.sin(me.a)*5;c.z=me.z+Math.cos(me.a)*5;c.a=me.a;c.g.position.set(c.x,0,c.z);toast('Автомобиль доставлен в гараж');line('Гараж: приобретён автомобиль за $500','pay');menu.style.display='none';saveNow()};
+$('mSkin').onclick=()=>{S.skin=(S.skin+1)%6;const colors=[0xe5483f,0x2874a6,0x229954,0x8e44ad,0xd4ac0d,0xeeeeee];scene.remove(me.g);me.g=mkMan(colors[S.skin]);scene.add(me.g);toast('Новый образ выбран');menu.style.display='none';saveNow()};
+// День/ночь: мягкое изменение цвета неба и освещения без тяжёлых постэффектов.
+let worldClock=8*60,dayCounter=1;
+const nightColor=new THREE.Color(0x101a35),dayColor=new THREE.Color(0xb9ecfb),sunDay=new THREE.Color(0xfff0d0),sunNight=new THREE.Color(0x8099d8);
+function updateWorld(dt){worldClock=(worldClock+dt*2.2)%1440;const h=worldClock/60,night=(h<6||h>19)?1:0;const k=(Math.sin((h-6)/13*Math.PI)+1)/2;scene.fog.color.copy(nightColor).lerp(dayColor,k);scene.background=scene.fog.color;sun.color.copy(sunNight).lerp(sunDay,k);sun.intensity=.22+k*.92;scene.fog.near=night?65:120;scene.fog.far=night?250:420;sun.position.set(me.x+Math.cos(h/24*TAU)*100,Math.max(25,Math.sin(h/24*TAU)*120),me.z+55);$('statsExtra').textContent='Los Santos District · День '+dayCounter+' · '+String(Math.floor(h)).padStart(2,'0')+':'+String(Math.floor((h%1)*60)).padStart(2,'0')+' · Банк '+money(S.bank)}
+// Мини-карта показывает дороги, район, игрока и миссионную точку.
+function drawMini(){const w=mini.width,h=mini.height,cx=w/2,cy=h/2,scale=1.35;mx.clearRect(0,0,w,h);mx.fillStyle='#18242b';mx.fillRect(0,0,w,h);mx.save();mx.translate(cx-me.x*scale,cy-me.z*scale);mx.scale(scale,scale);mx.fillStyle='#39434a';for(let i=0;i<=N;i++){mx.fillRect(i*P-RW/2,-100,RW,W+200);mx.fillRect(-100,i*P-RW/2,W+200,RW)}mx.fillStyle='#657078';for(const b of B){mx.fillRect(b[0],b[2],b[1]-b[0],b[3]-b[2])}mx.fillStyle='#d8aa43';mx.beginPath();mx.arc(MAYOR.x,MAYOR.z,4,0,TAU);mx.fill();if(mission){mx.fillStyle='#ffdd45';mx.beginPath();mx.arc(mission.x,mission.z,3,0,TAU);mx.fill()}mx.fillStyle='#ff5148';for(const c of cars){if(Math.hypot(c.x-me.x,c.z-me.z)<45){mx.beginPath();mx.arc(c.x,c.z,1.7,0,TAU);mx.fill()}}mx.restore();mx.fillStyle='#54e1ff';mx.beginPath();mx.arc(cx,cy,5,0,TAU);mx.fill();mx.strokeStyle='#fff';mx.lineWidth=2;mx.stroke();}
+let extraTick=0;
+const baseUpdate=update;
+update=function(dt){baseUpdate(dt);updateWorld(dt);extraTick+=dt;if(extraTick>.18){drawMini();extraTick=0}};
+// Дополнительные команды RP и экономические подсказки.
+const baseSend=send;
+send=function(t){const raw=t.trim().toLowerCase();if(raw==='/bank'){line('Банк: '+money(S.bank)+'. Подойдите к Мэрии и используйте меню города.','sys');return}if(raw==='/garage'){line('Гараж: меню ГОРОД → получить автомобиль за $500.','sys');return}if(raw==='/save'){saveNow();return}baseSend(t)};
+// Подсказка о расширенных действиях на мобильном устройстве.
+line('Новые системы: меню ГОРОД — гараж, банк, одежда и сохранение.','sys');
+
+</script>
+<script>
+'use strict';
+const $=i=>document.getElementById(i),clamp=(v,a,b)=>Math.min(b,Math.max(a,v)),TAU=Math.PI*2;
+const P=60,N=8,W=P*N,RW=16,DX=[1,0,-1,0],DZ=[0,1,0,-1];
+const money=n=>'$'+Math.round(n).toLocaleString('ru-RU');
+const angD=(a,b)=>{let d=(b-a)%TAU;if(d>Math.PI)d-=TAU;if(d<-Math.PI)d+=TAU;return d};
+let sd=7;function R(){sd|=0;sd=sd+0x6D2B79F5|0;let t=Math.imul(sd^sd>>>15,1|sd);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}
+let rr=Math.random;const rn=(a,b)=>a+rr()*(b-a),pk=a=>a[Math.floor(rr()*a.length)];
+
+// ---------- сцена ----------
+const cv=$('c'),MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent),ren=new THREE.WebGLRenderer({canvas:cv,antialias:!MOBILE,powerPreference:'high-performance'});
+ren.setPixelRatio(Math.min(devicePixelRatio||1,MOBILE?1.15:1.6));
+ren.shadowMap.enabled=!MOBILE;ren.shadowMap.type=THREE.PCFSoftShadowMap;ren.toneMapping=THREE.ACESFilmicToneMapping;ren.toneMappingExposure=1.08;ren.outputEncoding=THREE.sRGBEncoding;ren.physicallyCorrectLights=false;
+const scene=new THREE.Scene();scene.fog=new THREE.Fog(0xb9ecfb,120,420);
+function ctex(s,fn,rep){const c=document.createElement('canvas');c.width=c.height=s;fn(c.getContext('2d'),s);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;if(rep)t.repeat.set(rep[0],rep[1]);t.anisotropy=Math.min(4,ren.capabilities.getMaxAnisotropy());return t}
+const skyT=(()=>{const c=document.createElement('canvas');c.width=4;c.height=256;const x=c.getContext('2d'),g=x.createLinearGradient(0,0,0,256);g.addColorStop(0,'#1478e0');g.addColorStop(.38,'#3fb4f2');g.addColorStop(.5,'#b9ecfb');g.addColorStop(1,'#b9ecfb');x.fillStyle=g;x.fillRect(0,0,4,256);return new THREE.CanvasTexture(c)})();
+const sky=new THREE.Mesh(new THREE.SphereGeometry(480,16,16),new THREE.MeshBasicMaterial({map:skyT,side:THREE.BackSide,fog:false,depthWrite:false}));scene.add(sky);
+const asT=(a,b)=>ctex(128,(x,s)=>{x.fillStyle='#34373d';x.fillRect(0,0,s,s);for(let i=0;i<1100;i++){const v=38+Math.random()*34|0;x.fillStyle='rgb('+v+','+v+','+(v+4)+')';x.fillRect(Math.random()*s,Math.random()*s,1.6,1.6)}},[a,b]);
+const grT=ctex(128,(x,s)=>{x.fillStyle='#4f7a46';x.fillRect(0,0,s,s);for(let i=0;i<1400;i++){x.fillStyle=Math.random()<.5?'#5f8c52':'#406a3a';x.fillRect(Math.random()*s,Math.random()*s,2,3)}},[80,80]);
+const swT=ctex(64,(x,s)=>{x.fillStyle='#bdbab2';x.fillRect(0,0,s,s);x.strokeStyle='#8f8c85';x.lineWidth=2;x.strokeRect(0,0,s,s);for(let i=0;i<150;i++){x.fillStyle='rgba(0,0,0,.05)';x.fillRect(Math.random()*s,Math.random()*s,2,2)}},[11,11]);
+const cam=new THREE.PerspectiveCamera(65,1,.5,600);
+function rs(){ren.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}addEventListener('resize',rs);rs();
+scene.add(new THREE.HemisphereLight(0xc5dcff,0x59604f,.95));
+const sun=new THREE.DirectionalLight(0xfff0d0,1.1);sun.position.set(80,140,40);sun.castShadow=!MOBILE;sun.shadow.mapSize.set(MOBILE?512:1024,MOBILE?512:1024);{const q=sun.shadow.camera;q.left=q.bottom=-75;q.right=q.top=75;q.near=10;q.far=330}sun.shadow.bias=-.0006;scene.add(sun,sun.target);
+const M=(c,o)=>new THREE.MeshLambertMaterial(Object.assign({color:c},o||{}));
+const bx=(w,h,d,m,x,y,z,p)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;(p||scene).add(o);return o};
+const lpG=new THREE.CylinderGeometry(.12,.15,6,6),lbG=new THREE.SphereGeometry(.35,8,6),lpM=M(0x33383d),lbM=new THREE.MeshBasicMaterial({color:0xfff3b0});
+function lamp(x,z){const p=new THREE.Mesh(lpG,lpM);p.position.set(x,3.3,z);p.castShadow=true;scene.add(p);const b=new THREE.Mesh(lbG,lbM);b.position.set(x,6.4,z);scene.add(b)}
+const tcG=new THREE.CylinderGeometry(.25,.35,3,6),lfG=new THREE.IcosahedronGeometry(1,3);
+function tag(t,col,sc){const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d');x.font='bold 30px sans-serif';x.textAlign='center';x.lineWidth=6;x.strokeStyle='#000';x.strokeText(t,128,42);x.fillStyle=col||'#fff';x.fillText(t,128,42);
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false,transparent:true}));s.scale.set(sc||8,(sc||8)/4,1);s.renderOrder=9;return s}
+// земля и дороги
+const gr=bx(W+60,14,W+60,M(0xffffff,{map:grT}),W/2,-7.05,W/2);gr.castShadow=false;
+const wat=new THREE.Mesh(new THREE.PlaneGeometry(3000,3000),new THREE.MeshStandardMaterial({color:0x1a8fd0,metalness:.5,roughness:.12,envMapIntensity:1.2}));wat.rotation.x=-Math.PI/2;wat.position.set(W/2,-12,W/2);scene.add(wat);
+{const zc=4*P,x0=W+8,L=330,cc=M(0xc9c5b8);bx(L,.5,16,M(0xffffff,{map:asT(L/16,1)}),x0+L/2,-.17,zc).castShadow=false;
+ const rl=M(0xb8c0c8);for(const s of[-1,1]){bx(L,1,.4,rl,x0+L/2,.9,zc+s*8.1);bx(L,.25,.2,rl,x0+L/2,1.6,zc+s*8.1)}
+ bx(L,.02,.3,M(0xe5c04b),x0+L/2,.1,zc-.3);bx(L,.02,.3,M(0xe5c04b),x0+L/2,.1,zc+.3);
+ for(let x=x0+20;x<x0+L;x+=40)bx(4,12,12,M(0x8a8f95),x,-6,zc);
+ const cab=M(0xe8e4d8),cb=(a,b)=>{const d=new THREE.Vector3().subVectors(b,a),m=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,d.length(),5),cab);m.position.copy(a).addScaledVector(d,.5);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.clone().normalize());scene.add(m)};
+ for(const px of[x0+110,x0+240]){for(const s of[-1,1])bx(3.4,100,3.4,cc,px,50,zc+s*11);bx(3,3,22,cc,px,72,zc);bx(3,3,22,cc,px,34,zc);
+  for(const s of[-1,1])for(const dir of[-1,1])for(let i=1;i<=8;i++)cb(new THREE.Vector3(px,96-i*3,zc+s*11),new THREE.Vector3(px+dir*i*13,1.5,zc+s*8))}}
+const rdH=M(0xffffff,{map:asT(W/16,1)}),rdV=M(0xffffff,{map:asT(1,W/16)});for(let k=0;k<=N;k++){bx(W+RW,.12,RW,rdH,W/2,.02,k*P).castShadow=false;bx(RW,.12,W+RW,rdV,k*P,.02,W/2).castShadow=false}
+const mkT=(()=>{const c=document.createElement('canvas');c.width=512;c.height=128;const x=c.getContext('2d');x.fillStyle='#f2f2f2';for(let y=8;y<120;y+=16){x.fillRect(4,y,34,8);x.fillRect(474,y,34,8)}x.fillStyle='#e5c04b';x.fillRect(46,61,420,2.5);x.fillRect(46,65,420,2.5);x.fillStyle='#e8e8e8';x.fillRect(46,6,420,2);x.fillRect(46,120,420,2);const t=new THREE.CanvasTexture(c);t.anisotropy=Math.min(4,ren.capabilities.getMaxAnisotropy());return t})();
+const mkM=new THREE.MeshLambertMaterial({map:mkT,transparent:true,depthWrite:false}),mkG=new THREE.PlaneGeometry(P-RW,RW);
+for(let k=0;k<=N;k++)for(let s=0;s<N;s++){const a=new THREE.Mesh(mkG,mkM);a.rotation.x=-Math.PI/2;a.position.set(s*P+P/2,.1,k*P);a.receiveShadow=true;scene.add(a);const b=new THREE.Mesh(mkG,mkM);b.rotation.set(-Math.PI/2,0,Math.PI/2);b.position.set(k*P,.1,s*P+P/2);b.receiveShadow=true;scene.add(b)}
+// окна
+const wc=document.createElement('canvas');wc.width=wc.height=64;{const x=wc.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,64,64);x.fillStyle='#35506b';for(let i=0;i<2;i++)for(let j=0;j<2;j++)x.fillRect(6+i*32,6+j*32,20,20)}
+wc.width=wc.height=128;{const x=wc.getContext('2d');x.fillStyle='#e8e8e8';x.fillRect(0,0,128,128);x.fillStyle='#bdbdbd';for(let r=0;r<4;r++)x.fillRect(0,r*32+29,128,3);
+ for(let i=0;i<4;i++)for(let j=0;j<4;j++){const lit=Math.random()<.28,g=x.createLinearGradient(0,j*32,0,j*32+22);if(lit){g.addColorStop(0,'#ffe9a8');g.addColorStop(1,'#f5c66a')}else{g.addColorStop(0,'#7fb0d8');g.addColorStop(1,'#1f3a55')}
+  x.fillStyle='#666';x.fillRect(i*32+4,j*32+4,24,24);x.fillStyle=g;x.fillRect(i*32+5,j*32+5,22,22);x.fillStyle='rgba(255,255,255,.25)';x.fillRect(i*32+5,j*32+5,6,22)}}
+const wt=new THREE.CanvasTexture(wc);wt.wrapS=wt.wrapT=THREE.RepeatWrapping;wt.anisotropy=8;
+const B=[],BCOL=[0xb9a68c,0x9aa7b0,0xc4b5a0,0xa88f84,0x8f9aa6,0xb7b09a];
+function building(x,z,w,d,h,col,win){const sm=M(col,win?{map:wt.clone()}:{});if(win){sm.map.needsUpdate=true;sm.map.repeat.set(w/8,h/8)}
+  const m=[sm,sm,M(0x555a60),M(0x555a60),sm,sm];const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,h/2,z);scene.add(o);B.push([x-w/2,x+w/2,z-d/2,z+d/2])}
+function tree(x,z){bx(.7,3,.7,M(0x6b4a2b),x,1.5,z);const l=new THREE.Mesh(new THREE.SphereGeometry(2.2+rr(),8,6),M(0x2f8a3c));l.position.set(x,4.6,z);scene.add(l)}
+const MAYOR={x:3*P+30,z:3*P+30};let seedOnce=0;sd=7;
+for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+  const x0=i*P+RW/2,z0=j*P+RW/2,cx=x0+22,cz=z0+22;bx(P-RW,.3,P-RW,M(0xffffff,{map:swT}),cx,.15,cz);lamp(x0+1.2,z0+1.2);lamp(x0+42.8,z0+42.8);
+  if(i===3&&j===3){building(cx,cz,30,30,26,0xc9b27a,true);const t=tag('МЭРИЯ','#ffd37a',16);t.position.set(cx,32,cz);scene.add(t);continue}
+  if(i===4&&j===3){building(cx,cz,30,30,14,0xb04a4a,true);const t=tag('АВТОСАЛОН','#ff9a9a',16);t.position.set(cx,20,cz);scene.add(t);continue}
+  if(i===2&&j===3){building(cx,cz,30,30,18,0x3d5a9c,true);const t=tag('ПОЛИЦИЯ','#9ab8ff',16);t.position.set(cx,24,cz);scene.add(t);continue}
+  if(R()<.14){for(let k=0;k<12;k++)tree(x0+4+R()*36,z0+4+R()*36);continue}
+  for(let c=0;c<4;c++){const lx=x0+3+(c%2)*21+9,lz=z0+3+(c>>1)*21+9;
+    if(R()<.85)building(lx,lz,17+R()*3,17+R()*3,7+R()*28,BCOL[Math.floor(R()*6)],true);else tree(lx,lz)}}
+rr=Math.random;
+function hitB(x,z,r){let h=false;for(const b of B){const cx=clamp(x,b[0],b[1]),cz=clamp(z,b[2],b[3]),dx=x-cx,dz=z-cz,d2=dx*dx+dz*dz;
+  if(d2<r*r){h=true;if(d2>1e-4){const d=Math.sqrt(d2);x+=dx/d*(r-d);z+=dz/d*(r-d)}else x=b[0]-r}}
+  const cor=Math.abs(z-4*P)<8-r;let nx=clamp(x,r,cor?W+320:W-r),nz=clamp(z,r,W-r);if(nx>W-r)nz=clamp(z,4*P-8+r,4*P+8-r);if(nx!==x||nz!==z)h=true;return{x:nx,z:nz,h}}
+
+// ---------- 3D модели ----------
+function mkCar(col){const g=new THREE.Group(),b=M(col);
+  bx(2.1,.8,4.4,b,0,.85,0,g);bx(1.8,.75,2.2,M(0x1d2a38),0,1.6,-.2,g);bx(1.9,.1,2.3,b,0,2,-.2,g);
+  for(const[sx,sz]of[[1,1.4],[-1,1.4],[1,-1.4],[-1,-1.4]]){const w=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,.35,12),M(0x111111));w.rotation.z=Math.PI/2;w.position.set(sx*1.05,.45,sz);g.add(w)}
+  bx(.5,.25,.1,M(0xffffcc,{emissive:0xffffaa}),.65,.95,2.2,g);bx(.5,.25,.1,M(0xffffcc,{emissive:0xffffaa}),-.65,.95,2.2,g);
+  bx(.5,.25,.1,M(0xff2222,{emissive:0x880000}),.65,.95,-2.2,g);bx(.5,.25,.1,M(0xff2222,{emissive:0x880000}),-.65,.95,-2.2,g);return g}
+function mkMan(col){const g=new THREE.Group(),sk=M(0xe0b48c);
+  const l=bx(.35,.9,.35,M(0x2c3e50),-.2,.45,0,g),r=bx(.35,.9,.35,M(0x2c3e50),.2,.45,0,g);l.geometry.translate(0,-.1,0);r.geometry.translate(0,-.1,0);
+  bx(.8,.9,.4,M(col),0,1.35,0,g);const a1=bx(.25,.8,.25,M(col),-.55,1.4,0,g),a2=bx(.25,.8,.25,M(col),.55,1.4,0,g);
+  bx(.45,.45,.45,sk,0,2.05,0,g);g.u={l,r,a1,a2};return g}
+
+// ---------- улучшенные модели ----------
+function building(x,z,w,d,h,col,win){const mk=a=>{const m=M(col,{map:wt.clone()});m.map.needsUpdate=true;m.map.repeat.set(a/12,h/12);return m};
+  const a=mk(w),b=mk(d),rf=M(0x55585d);const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),[b,b,rf,rf,a,a]);o.position.set(x,h/2,z);o.castShadow=o.receiveShadow=true;scene.add(o);
+  bx(w+.5,.7,d+.5,M(0x6a6d72),x,h+.35,z);bx(w+.3,3,d+.3,M(new THREE.Color(col).multiplyScalar(.65)),x,1.5,z);
+  bx(w*.6,.25,1.8,M(pk([0xc0392b,0x2e86c1,0x27ae60,0xe67e22])),x,3.3,z+d/2+.9);bx(w*.7,1.7,.1,M(0x9fd0e8,{emissive:0x335566}),x,1.5,z+d/2+.18);
+  if(rr()<.7)bx(2.5,1.2,2,M(0x8a8f95),x+rn(-w/4,w/4),h+1.3,z+rn(-d/4,d/4));
+  B.push([x-w/2,x+w/2,z-d/2,z+d/2])}
+function tree(x,z){const s=.8+rr()*.8,g=pk([0x2f8a3c,0x3d9a45,0x287a35,0x4aa04a]),t=new THREE.Mesh(tcG,M(0x6b4a2b));t.position.set(x,1.5,z);t.castShadow=true;scene.add(t);
+  for(let i=0;i<3;i++){const l=new THREE.Mesh(lfG,M(g)),r=(2.4-i*.5)*s;l.scale.set(r,r*.9,r);l.position.set(x+(rr()-.5)*.6,3.6+i*1.5*s,z+(rr()-.5)*.6);l.castShadow=true;scene.add(l)}}
+function mkCar(col){const g=new THREE.Group(),b=new THREE.MeshPhongMaterial({color:col,shininess:70,specular:0x666666}),gl=new THREE.MeshPhongMaterial({color:0x1c2b3a,shininess:120,specular:0xaaaaaa}),dk=M(0x15171a);
+  bx(2,.4,4.3,dk,0,.45,0,g);bx(2.1,.6,4.4,b,0,.9,0,g);bx(1.95,.22,1.5,b,0,1.28,1.35,g);bx(1.95,.26,1.2,b,0,1.28,-1.6,g);
+  bx(1.78,.72,2.1,gl,0,1.65,-.2,g);bx(1.9,.12,1.9,b,0,2.06,-.2,g);
+  bx(2.1,.3,.25,dk,0,.55,2.28,g);bx(2.1,.3,.25,dk,0,.55,-2.28,g);bx(1.2,.3,.06,M(0x222222),0,.95,2.22,g);
+  const hl=M(0xffffee,{emissive:0xffffaa}),tl=M(0xff2222,{emissive:0x990000});
+  bx(.5,.22,.1,hl,.7,1.05,2.21,g);bx(.5,.22,.1,hl,-.7,1.05,2.21,g);bx(.5,.2,.1,tl,.7,1.05,-2.21,g);bx(.5,.2,.1,tl,-.7,1.05,-2.21,g);
+  bx(.7,.2,.05,M(0xf0f0f0),0,.8,-2.24,g);bx(.3,.15,.25,b,1.1,1.5,.9,g);bx(.3,.15,.25,b,-1.1,1.5,.9,g);
+  const wg=new THREE.CylinderGeometry(.48,.48,.38,14),rg=new THREE.CylinderGeometry(.28,.28,.4,10),wm=M(0x0d0d0d),rm=M(0xc8ccd0);
+  for(const[sx,sz]of[[1,1.4],[-1,1.4],[1,-1.4],[-1,-1.4]]){const w=new THREE.Mesh(wg,wm);w.rotation.z=Math.PI/2;w.position.set(sx*1.02,.48,sz);w.castShadow=true;g.add(w);const r=new THREE.Mesh(rg,rm);r.rotation.z=Math.PI/2;r.position.set(sx*1.05,.48,sz);g.add(r)}
+  return g}
+function mkMan(col){const g=new THREE.Group(),sk=M(pk([0xe0b48c,0xc68e63,0xf1c9a5])),pn=M(pk([0x2c3e50,0x3a3a3a,0x4a5a6a])),sh=M(col);
+  const limb=(w,h,m,x,y)=>{const p=new THREE.Group();p.position.set(x,y,0);bx(w,h,w,m,0,-h/2,0,p);g.add(p);return p};
+  const l=limb(.34,.95,pn,-.2,.95),r=limb(.34,.95,pn,.2,.95);bx(.36,.15,.5,M(0x111111),0,-.88,.07,l);bx(.36,.15,.5,M(0x111111),0,-.88,.07,r);
+  bx(.85,.95,.45,sh,0,1.45,0,g);const a1=limb(.26,.85,sh,-.57,1.85),a2=limb(.26,.85,sh,.57,1.85);bx(.24,.2,.24,sk,0,-.9,0,a1);bx(.24,.2,.24,sk,0,-.9,0,a2);
+  const hd=new THREE.Mesh(new THREE.SphereGeometry(.3,12,10),sk);hd.position.y=2.3;hd.castShadow=true;g.add(hd);bx(.6,.2,.6,M(pk([0x1a1a1a,0x5a3a1a,0xc8a050])),0,2.5,-.02,g);
+  g.u={l,r,a1,a2};return g}
+// ---------- округлые модели и PBR ----------
+const pm=new THREE.PMREMGenerator(ren),envS=new THREE.Scene();envS.add(new THREE.Mesh(new THREE.SphereGeometry(100,16,16),new THREE.MeshBasicMaterial({map:skyT,side:THREE.BackSide})));scene.environment=pm.fromScene(envS).texture;
+const glT=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),g=x.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.25,'rgba(255,245,200,.7)');g.addColorStop(1,'rgba(255,240,200,0)');x.fillStyle=g;x.fillRect(0,0,128,128);return new THREE.CanvasTexture(c)})();
+const sunDir=new THREE.Vector3(70,120,45).normalize(),sunS=new THREE.Sprite(new THREE.SpriteMaterial({map:glT,fog:false,depthWrite:false,transparent:true,blending:THREE.AdditiveBlending}));sunS.scale.set(150,150,1);scene.add(sunS);
+const clT=(()=>{const c=document.createElement('canvas');c.width=256;c.height=128;const x=c.getContext('2d');for(let i=0;i<9;i++){const px=40+Math.random()*176,py=50+Math.random()*30,r=28+Math.random()*26,g=x.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,256,128)}return new THREE.CanvasTexture(c)})();
+for(let i=0;i<(MOBILE?5:10);i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:clT,fog:false,depthWrite:false,transparent:true,opacity:.6+Math.random()*.4}));s.position.set(-150+Math.random()*(W+300),120+Math.random()*60,-150+Math.random()*(W+300));s.scale.set(120+Math.random()*90,50+Math.random()*30,1);scene.add(s)}
+const smat=(c,r)=>new THREE.MeshStandardMaterial({color:c,roughness:r||.85,metalness:0,envMapIntensity:.6});
+function capGeo(r,h,seg){const p=[],hh=Math.max(0,h/2-r);for(let i=0;i<=8;i++){const a=-Math.PI/2+i/8*Math.PI/2;p.push(new THREE.Vector2(Math.cos(a)*r,-hh+Math.sin(a)*r))}for(let i=0;i<=8;i++){const a=i/8*Math.PI/2;p.push(new THREE.Vector2(Math.cos(a)*r,hh+Math.sin(a)*r))}return new THREE.LatheGeometry(p,seg||14)}
+const G={sph:new THREE.SphereGeometry(1,18,14),th:capGeo(.14,.58),sn:capGeo(.1,.46),ua:capGeo(.085,.5),fa:capGeo(.07,.46),ch:capGeo(.27,.8,18),hair:new THREE.SphereGeometry(1,16,10,0,Math.PI*2,0,Math.PI*.58)};
+function mc(geo,mat,x,y,z,p,sx,sy,sz){const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);if(sx)o.scale.set(sx,sy,sz);o.castShadow=true;p.add(o);return o}
+function exg(s,d,b){const g=new THREE.ExtrudeGeometry(s,{depth:d,bevelEnabled:true,bevelThickness:b,bevelSize:b,bevelSegments:5,curveSegments:12});g.translate(0,0,-d/2);return g}
+function mkMan(col,uni){const g=new THREE.Group(),sk=smat(pk([0xe0b48c,0xc68e63,0xf1c9a5,0x8d5a3a]),.55),pn=smat(uni?0x14171b:pk([0x2c3e50,0x3a3a3a,0x4a5a6a,0x5b4a3a])),sh=smat(col),shoe=smat(0x1a1a1a,.5),eye=smat(0x111111,.4),hr=smat(pk([0x1a1a1a,0x5a3a1a,0xc8a050,0x6b2f1a])),long=!!uni||rr()<.5;
+  const leg=x=>{const h=new THREE.Group();h.position.set(x,.98,0);g.add(h);mc(G.th,pn,0,-.28,0,h);const k=new THREE.Group();k.position.y=-.55;h.add(k);mc(G.sn,pn,0,-.23,0,k);mc(G.sph,shoe,0,-.45,.07,k,.12,.07,.2);return[h,k]};
+  const arm=x=>{const s=new THREE.Group();s.position.set(x,1.78,0);g.add(s);mc(G.ua,sh,0,-.22,0,s);const e=new THREE.Group();e.position.y=-.45;e.rotation.x=-.35;s.add(e);mc(G.fa,long?sh:sk,0,-.2,0,e);mc(G.sph,sk,0,-.43,0,e,.075,.085,.075);return[s,e]};
+  const[l,lk]=leg(-.16),[r,rk]=leg(.16),[a1]=arm(-.42),[a2]=arm(.42);
+  mc(G.sph,pn,0,.98,0,g,.25,.18,.17);mc(G.ch,sh,0,1.45,0,g,1.25,1,.8);mc(G.sph,sk,0,1.93,0,g,.075,.1,.075);
+  const hd=new THREE.Group();hd.position.y=2.1;g.add(hd);mc(G.sph,sk,0,0,0,hd,.2,.24,.22);mc(G.hair,hr,0,.01,-.01,hd,.215,.26,.235).rotation.x=-.5;
+  mc(G.sph,eye,-.075,.03,.19,hd,.025,.03,.02);mc(G.sph,eye,.075,.03,.19,hd,.025,.03,.02);
+  // Original low-poly facial features: ears, nose, brows and mouth
+  mc(G.sph,sk,-.205,-.015,0,hd,.055,.075,.055);mc(G.sph,sk,.205,-.015,0,hd,.055,.075,.055);
+  mc(G.sph,sk,0,-.045,.235,hd,.035,.05,.045);
+  const brow=smat(0x34251d,.9),mouth=smat(0x704b43,.9);
+  mc(G.sph,brow,-.075,.09,.19,hd,.04,.012,.018);mc(G.sph,brow,.075,.09,.19,hd,.04,.012,.018);
+  mc(G.sph,mouth,0,-.125,.205,hd,.045,.012,.012);
+  // Jacket seams, collar and pockets; shared mesh materials keep draw calls moderate
+  const seam=smat(0x202a32,.95),zip=smat(0xb5b9bd,.45);
+  mc(G.sph,seam,0,1.48,.145,g,.018,.34,.012);mc(G.sph,zip,0,1.55,.16,g,.012,.22,.012);
+  mc(G.sph,seam,-.13,1.28,.17,g,.12,.09,.018);mc(G.sph,seam,.13,1.28,.17,g,.12,.09,.018);
+  // Belt and shoe accents
+  mc(G.sph,seam,0,1.02,0,g,.24,.045,.18);
+  g.u={l,r,lk,rk,a1,a2};return g}
+function mkCar(col){const g=new THREE.Group(),bm=new THREE.MeshStandardMaterial({color:col,metalness:.55,roughness:.28,envMapIntensity:1.3}),gm=new THREE.MeshStandardMaterial({color:0x0c1520,metalness:.9,roughness:.06,envMapIntensity:1.6}),dk=smat(0x111214,.6),tire=smat(0x0d0d0d,.9),chr=new THREE.MeshStandardMaterial({color:0xd0d4d8,metalness:.9,roughness:.2}),hl=new THREE.MeshBasicMaterial({color:0xfff6c8}),tl=new THREE.MeshBasicMaterial({color:0xff2a2a});
+  const s1=new THREE.Shape();s1.moveTo(-1.95,.5);s1.lineTo(1.9,.5);s1.lineTo(1.98,.75);s1.quadraticCurveTo(2.02,1.02,1.75,1.12);s1.quadraticCurveTo(1.2,1.2,.95,1.3);s1.lineTo(-1.15,1.3);s1.quadraticCurveTo(-1.85,1.27,-2,1.1);s1.lineTo(-2,.75);s1.lineTo(-1.95,.5);
+  const s2=new THREE.Shape();s2.moveTo(-1.3,1.28);s2.quadraticCurveTo(-1.05,1.3,-.8,1.9);s2.quadraticCurveTo(-.7,2.05,-.45,2.05);s2.lineTo(.3,2.05);s2.quadraticCurveTo(.55,2.05,.7,1.9);s2.lineTo(1.1,1.3);s2.lineTo(-1.3,1.28);
+  const s3=new THREE.Shape();s3.moveTo(-.85,1.98);s3.lineTo(.45,1.98);s3.quadraticCurveTo(.62,2.1,.38,2.14);s3.lineTo(-.6,2.14);s3.quadraticCurveTo(-.9,2.1,-.85,1.98);
+  for(const[sh,d,b,m]of[[s1,1.7,.18,bm],[s2,1.45,.1,gm],[s3,1.5,.07,bm]]){const o=new THREE.Mesh(exg(sh,d,b),m);o.rotation.y=-Math.PI/2;o.castShadow=o.receiveShadow=true;g.add(o)}
+  const bp=capGeo(.12,1.9,10);for(const z of[2.02,-2.02]){const o=new THREE.Mesh(bp,dk);o.rotation.z=Math.PI/2;o.position.set(0,.5,z);g.add(o)}
+  for(const x of[-.7,.7]){mc(G.sph,hl,x,.97,2.07,g,.3,.14,.12);mc(G.sph,tl,x,1.0,-2.09,g,.3,.12,.1)}
+  for(const x of[-1.1,1.1])mc(G.sph,bm,x,1.45,.6,g,.12,.09,.17);
+  bx(.7,.2,.05,smat(0xf0f0f0),0,.78,-2.13,g);bx(1.1,.25,.05,dk,0,.82,2.12,g);
+  const tG=new THREE.TorusGeometry(.34,.14,12,22),rG=new THREE.CylinderGeometry(.3,.3,.22,18);
+  for(const[sx,sz]of[[1,1.35],[-1,1.35],[1,-1.35],[-1,-1.35]]){const w=new THREE.Group();w.position.set(sx*1.0,.46,sz);const t=new THREE.Mesh(tG,tire);t.rotation.y=Math.PI/2;t.castShadow=true;w.add(t);const r=new THREE.Mesh(rG,chr);r.rotation.z=Math.PI/2;w.add(r);g.add(w)}
+  return g}
+const PN=['Artem_Volkov','Dmitriy_Sokolov','Nikita_Morozov','Maxim_Orlov','Sergey_Lebedev','Anna_Ivanova'];
+function plate(nick,id,lvl,fam,adm){const c=document.createElement('canvas');c.width=512;c.height=200;const x=c.getContext('2d');x.textAlign='center';x.font='bold 46px Arial';x.lineWidth=8;x.strokeStyle='#000';x.strokeText(nick,256,46);x.fillStyle='#fff';x.fillText(nick,256,46);
+  x.fillStyle='rgba(30,34,40,.88)';x.fillRect(96,62,320,40);x.fillStyle='#e6e6e6';x.font='bold 26px Arial';x.fillText(fam,256,92);x.fillStyle='rgba(0,0,0,.65)';x.fillRect(96,110,320,14);x.fillStyle='#ff3b3b';x.fillRect(98,112,316,10);
+  const bs=[];if(adm)bs.push(['ADMIN','#d63a3a','#fff',110]);bs.push([String(id),'#262a30','#fff',70],[lvl+' LVL','#f2c230','#222',110]);let px=256-(bs.reduce((a,b)=>a+b[3]+8,-8))/2;
+  for(const b of bs){x.fillStyle=b[1];x.fillRect(px,132,b[3],44);x.fillStyle=b[2];x.font='bold 30px Arial';x.fillText(b[0],px+b[3]/2,165);px+=b[3]+8}
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false,transparent:true}));s.renderOrder=9;return s}
+function mkCop(){const g=mkMan(0x14171b,1),hd=g.children.find(o=>o.isGroup&&Math.abs(o.position.y-2.1)<.01),dk=smat(0x0e0f12,.5),rd=smat(0xb52a2a,.5);
+  mc(new THREE.CylinderGeometry(.22,.27,.13,18),dk,0,.2,0,hd);mc(new THREE.CylinderGeometry(.275,.275,.05,18),rd,0,.145,0,hd);mc(G.sph,dk,0,.14,.2,hd,.2,.02,.14);mc(G.sph,smat(0xd4af37,.3),0,.2,.25,hd,.04,.04,.02);mc(G.sph,smat(0x050505,.2),0,.04,.2,hd,.17,.04,.03);return g}
+function mkGW(col){const g=new THREE.Group(),bm=new THREE.MeshStandardMaterial({color:col,metalness:.55,roughness:.3,envMapIntensity:1.3}),gm=new THREE.MeshStandardMaterial({color:0x0c1520,metalness:.9,roughness:.06,envMapIntensity:1.6}),dk=smat(0x111214,.6),chr=new THREE.MeshStandardMaterial({color:0xd0d4d8,metalness:.9,roughness:.2}),hl=new THREE.MeshBasicMaterial({color:0xfff6c8}),tl=new THREE.MeshBasicMaterial({color:0xff2a2a}),tire=smat(0x0d0d0d,.9);
+  const s=new THREE.Shape();s.moveTo(-1.95,.5);s.lineTo(1.95,.5);s.lineTo(1.98,1.42);s.lineTo(1,1.5);s.lineTo(.85,2.25);s.lineTo(-1.9,2.25);s.lineTo(-1.98,2.1);s.lineTo(-1.95,.5);
+  const o=new THREE.Mesh(exg(s,1.7,.08),bm);o.rotation.y=-Math.PI/2;o.castShadow=o.receiveShadow=true;g.add(o);
+  for(const x of[-.955,.955])bx(.05,.7,2.3,gm,x,1.85,-.45,g);
+  bx(1.7,.72,.05,gm,0,1.9,.98,g).rotation.x=-.2;bx(1.6,.6,.05,gm,0,1.85,-2.06,g);
+  bx(1.3,.5,.05,dk,0,1.05,2.06,g);for(let i=0;i<3;i++)bx(1.3,.05,.06,chr,0,.88+i*.16,2.08,g);
+  for(const x of[-.72,.72]){const h=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.1,16),hl);h.rotation.x=Math.PI/2;h.position.set(x,1.22,2.06);g.add(h);bx(.18,.4,.06,tl,x*1.2,1.15,-2.06,g)}
+  bx(2.1,.3,.3,dk,0,.6,2,g);bx(2.1,.3,.3,dk,0,.6,-2,g);
+  for(const[sx,sz]of[[1,1.35],[-1,1.35],[1,-1.35],[-1,-1.35]]){bx(.2,.14,1.2,dk,sx*1,1.05,sz,g);const w=new THREE.Group();w.position.set(sx,.5,sz);const t=new THREE.Mesh(new THREE.TorusGeometry(.38,.16,12,22),tire);t.rotation.y=Math.PI/2;t.castShadow=true;w.add(t);const r=new THREE.Mesh(new THREE.CylinderGeometry(.32,.32,.24,18),chr);r.rotation.z=Math.PI/2;w.add(r);g.add(w)}
+  const sp=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.3,18),tire);sp.rotation.x=Math.PI/2;sp.position.set(0,1.35,-2.25);g.add(sp);
+  for(const x of[-1.1,1.1])bx(.15,.18,.3,dk,x,1.6,.9,g);
+  return g}
+// ---------- состояние ----------
+const S={name:'Ivan_Petrov',id:Math.floor(Math.random()*900+100),cash:2500,hp:100,lvl:1,done:0,job:false,pay:60,col:(Math.random()*0xffffff|0)};
+const me={x:MAYOR.x,z:MAYOR.z-27,a:0,car:null,g:mkMan(0xe5483f),anim:0,v:0};scene.add(me.g);
+const cars=[];let camYaw=0,camDrag=0,running=false,mission=null,beacon=null;
+const COLS=[0xc0392b,0x2e86c1,0x27ae60,0xf1c40f,0x8e44ad,0xecf0f1,0x34495e,0xe67e22];
+function newCar(col){const c={x:0,z:0,a:0,v:0,g:(Math.random()<.4?mkGW(col):mkCar(col)),ai:false,d:0,ni:0,nj:0,sp:Math.random()*8,col};scene.add(c.g);cars.push(c);return c}
+function place(c){const i=Math.floor(Math.random()*(N+1)),j=Math.floor(Math.random()*(N+1)),o=[];
+  for(let d=0;d<4;d++){const ni=i+DX[d],nj=j+DZ[d];if(ni>=0&&ni<=N&&nj>=0&&nj<=N)o.push(d)}
+  const d=pk(o);c.d=d;c.ni=i+DX[d];c.nj=j+DZ[d];c.x=i*P+(d===1?-4:d===3?4:0);c.z=j*P+(d===0?4:d===2?-4:0);c.a=Math.atan2(DX[d],DZ[d]);c.ai=true}
+for(let k=0;k<(MOBILE?12:22);k++){const c=newCar(pk(COLS));place(c)}
+const peds=[];for(let k=0;k<(MOBILE?10:18);k++){const cop=k<6,g=cop?mkCop():mkMan(pk([0xc0392b,0x2980b9,0x27ae60,0x8e44ad,0xd35400,0x7f8c8d,0xf39c12]));if(cop||k%2===0){const pp=plate(cop?pk(['Officer_Smith','Sgt_Volkov','Lt_Morozov']):pk(PN),100+k*7,cop?30:1+k%12,cop?'Полиция':pk(['Brest Family','Nemos Castle','Upwood Family']),false);pp.scale.set(5,1.95,1);pp.position.y=3.2;g.add(pp)}scene.add(g);peds.push({cop,g,i:Math.floor(Math.random()*N),j:Math.floor(Math.random()*N),s:Math.random()*166,dir:Math.random()<.5?1:-1,sp:cop?3.4:1.1+Math.random()*.9,ph:Math.random()*6})}
+function pedPos(p){const L=41.6,x0=p.i*P+RW/2+1.2,z0=p.j*P+RW/2+1.2,u=((p.s%166.4)+166.4)%166.4,q=Math.floor(u/L),t=u%L;return q===0?[x0+t,z0]:q===1?[x0+L,z0+t]:q===2?[x0+L-t,z0+L]:[x0,z0+L-t]}
+function pedStep(dt){for(const p of peds){p.s+=p.dir*p.sp*dt;const a=pedPos(p);p.s+=p.dir*.5;const b=pedPos(p);p.s-=p.dir*.5;p.g.position.set(a[0],.3,a[1]);p.g.rotation.y=Math.atan2(b[0]-a[0],b[1]-a[1]);animMan(p.g,Math.sin(performance.now()/260*p.sp+p.ph)*.9)}}
+[[-7,-36],[0,-36],[7,-36]].forEach((o,k)=>{const c=newCar(COLS[k+2]);c.x=MAYOR.x+o[0]+14;c.z=MAYOR.z+o[1]-4+(k?0:0);c.z=3*P+RW/2+3.2;c.x=MAYOR.x-20+k*7;c.a=Math.PI/2*(k%2?1:3)});
+function aiStep(c,dt){const tx=c.ni*P+(c.d===1?-4:c.d===3?4:0),tz=c.nj*P+(c.d===0?4:c.d===2?-4:0),dx=tx-c.x,dz=tz-c.z,dd=Math.hypot(dx,dz);
+  c.a+=angD(c.a,Math.atan2(dx,dz))*Math.min(1,dt*5);let tv=13+c.sp;if(dd<14)tv*=.6;
+  const px=(me.car||me).x,pz=(me.car||me).z,fx=px-c.x,fz=pz-c.z,f=fx*Math.sin(c.a)+fz*Math.cos(c.a),l=fx*Math.cos(c.a)-fz*Math.sin(c.a);
+  if(f>0&&f<14&&Math.abs(l)<3.2)tv=0;
+  c.v+=(tv-c.v)*Math.min(1,dt*(tv?2:6));c.x+=Math.sin(c.a)*c.v*dt;c.z+=Math.cos(c.a)*c.v*dt;
+  if(dd<5){const o=[];for(let d=0;d<4;d++){if(d===(c.d+2)%4)continue;const ni=c.ni+DX[d],nj=c.nj+DZ[d];if(ni>=0&&ni<=N&&nj>=0&&nj<=N)o.push(d)}
+    const d=o.includes(c.d)&&Math.random()<.6?c.d:pk(o);c.d=d;c.ni+=DX[d];c.nj+=DZ[d]}}
+
+// ---------- ввод ----------
+const K={};let ax=0,ay=0,run=false,hb=false;const jy={x:0,y:0};
+addEventListener('keydown',e=>{if(document.activeElement===$('cin'))return;K[e.code]=1;
+  if(!running)return;if(e.code==='KeyF')useCar();if(e.code==='KeyE')act();if(e.code==='KeyT'||e.code==='Enter'){e.preventDefault();openChat()}if(e.code==='Space')e.preventDefault()});
+addEventListener('keyup',e=>{K[e.code]=0});
+function readInput(){ax=(K.KeyD||K.ArrowRight?1:0)-(K.KeyA||K.ArrowLeft?1:0)+jy.x;ay=(K.KeyW||K.ArrowUp?1:0)-(K.KeyS||K.ArrowDown?1:0)-jy.y;
+  ax=clamp(ax,-1,1);ay=clamp(ay,-1,1);run=!!(K.ShiftLeft||K.ShiftRight)||Math.hypot(jy.x,jy.y)>.9;hb=!!K.Space||hbT}
+let hbT=false,drag=null;
+cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,id:e.pointerId};cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointermove',e=>{if(drag&&drag.id===e.pointerId){camYaw-=(e.clientX-drag.x)*.006;drag.x=e.clientX;camDrag=2.5}});
+cv.addEventListener('pointerup',()=>drag=null);
+if('ontouchstart' in window||navigator.maxTouchPoints>0){$('touch').style.display='block';const j=$('joy'),kn=$('kn');let jid=null;
+  const mv=e=>{const r=j.getBoundingClientRect(),dx=e.clientX-(r.left+60),dy=e.clientY-(r.top+60),d=Math.hypot(dx,dy),m=Math.min(d,50)/50,a=Math.atan2(dy,dx);jy.x=Math.cos(a)*m;jy.y=Math.sin(a)*m;kn.style.transform=`translate(${jy.x*40}px,${jy.y*40}px)`};
+  j.addEventListener('pointerdown',e=>{jid=e.pointerId;j.setPointerCapture(jid);mv(e)});j.addEventListener('pointermove',e=>{if(e.pointerId===jid)mv(e)});
+  const en=()=>{jid=null;jy.x=jy.y=0;kn.style.transform=''};j.addEventListener('pointerup',en);j.addEventListener('pointercancel',en);
+  $('bE').onpointerdown=()=>act();$('bF').onpointerdown=()=>useCar();$('bT').onpointerdown=()=>openChat();$('bH').onpointerdown=()=>hbT=true;$('bH').onpointerup=()=>hbT=false}
+
+// ---------- чат ----------
+const log=$('log'),cin=$('cin');
+function line(t,c){const d=document.createElement('div');d.textContent=t;if(c)d.className=c;log.appendChild(d);while(log.children.length>30)log.removeChild(log.firstChild);setTimeout(()=>d.style.opacity=.0,14000)}
+function toast(t){const e=$('ts');e.textContent=t;e.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.opacity=0,2400)}
+function openChat(){cin.style.display='block';cin.value='';cin.focus()}
+cin.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){send(cin.value);cin.style.display='none';cin.blur()}else if(e.key==='Escape'){cin.style.display='none';cin.blur()}});
+function send(t){t=t.trim();if(!t)return;const nm=S.name+'['+S.id+']';let k='say',txt;
+  if(t[0]==='/'){const p=t.slice(1).split(' '),c=p.shift().toLowerCase(),a=p.join(' ');
+    if(c==='help'){line('Команды: /me /do /s /b /stats /help','sys');return}
+    if(c==='stats'){line('Уровень '+S.lvl+', наличные '+money(S.cash)+', доставок: '+S.done,'sys');return}
+    if(!a){line('Используйте: /'+c+' [текст]','bad');return}
+    if(c==='me'){k='me';txt='* '+S.name+' '+a}else if(c==='do'){k='me';txt='* '+a+' ('+S.name+')'}else if(c==='s'){txt=nm+' кричит: '+a+'!'}else if(c==='b'){txt='(( '+nm+': '+a+' ))'}else{line('Неизвестная команда','bad');return}}
+  else txt=nm+': '+t;
+  line(txt,k);if(net)net.emit('chat',{t:txt,k}).catch(()=>{})}
+
+// ---------- игровая логика ----------
+function useCar(){if(me.car){const c=me.car;me.x=c.x+Math.cos(c.a)*3;me.z=c.z-Math.sin(c.a)*3;const r=hitB(me.x,me.z,.8);me.x=r.x;me.z=r.z;me.car=null;me.g.visible=true;c.v=0;return}
+  let b=null,bd=6;for(const c of cars){const d=Math.hypot(c.x-me.x,c.z-me.z);if(d<bd){bd=d;b=c}}
+  if(b){b.ai=false;me.car=b;me.g.visible=false;me.v=b.v}}
+function act(){if(Math.hypot(me.x-MAYOR.x,me.z-MAYOR.z)<30){S.job=!S.job;if(S.job){toast('Вы устроились курьером');next()}else{clearM();toast('Вы уволились')}}}
+function clearM(){mission=null;if(beacon){scene.remove(beacon);beacon=null}}
+function next(){clearM();const i=Math.floor(Math.random()*N),j=Math.floor(Math.random()*N);mission={x:i*P+8+Math.random()*44,z:j*P+RW/2-1};
+  beacon=new THREE.Mesh(new THREE.CylinderGeometry(2.5,2.5,60,16,1,true),new THREE.MeshBasicMaterial({color:0xffd23a,transparent:true,opacity:.4,side:2}));beacon.position.set(mission.x,30,mission.z);scene.add(beacon)}
+let payT=60;
+function pay(){S.cash+=200+S.lvl*50;line('PayDay: зарплата '+money(200+S.lvl*50),'pay');toast('PayDay!')}
+function die(){S.hp=100;S.cash=Math.max(0,S.cash-100);if(me.car){useCar()}me.x=MAYOR.x;me.z=MAYOR.z-27;line('Вас доставили в больницу. Счёт: $100','bad')}
+
+function update(dt){readInput();const T=me.car||me;
+  if(me.car){const c=me.car;let v=c.v;
+    if(ay>0)v+=ay*24*dt*(1-Math.max(0,v)/42);else if(ay<0)v+=ay*(v>0?45:14)*dt;else v-=Math.sign(v)*Math.min(Math.abs(v),7*dt);
+    if(hb)v-=Math.sign(v)*Math.min(Math.abs(v),50*dt);v=clamp(v,-10,42);c.v=v;
+    c.a-=ax*2*Math.min(1,Math.abs(v)/6)*(v<0?-1:1)*dt/(1+Math.abs(v)/50);
+    c.x+=Math.sin(c.a)*v*dt;c.z+=Math.cos(c.a)*v*dt;
+    const r=hitB(c.x,c.z,2.3);if(r.h){if(Math.abs(v)>10){S.hp-=Math.round(Math.abs(v)/4);toast('Удар! HP '+Math.max(0,S.hp))}c.v*=-.3}c.x=r.x;c.z=r.z;
+    for(const o of cars){if(o===c)continue;const dx=o.x-c.x,dz=o.z-c.z,d=Math.hypot(dx,dz);if(d<4&&d>0){c.x-=dx/d*(4-d)*.5;c.z-=dz/d*(4-d)*.5;o.x+=dx/d*(4-d)*.5;o.z+=dz/d*(4-d)*.5;if(Math.abs(c.v)>12){S.cash=Math.max(0,S.cash-50);toast('ДТП! Штраф $50');c.v*=.4}}}
+    me.x=c.x;me.z=c.z;me.a=c.a;
+    $('sp').style.display='block';$('sp').textContent=Math.round(Math.abs(c.v)*3.2)+' км/ч';
+  }else{$('sp').style.display='none';
+    const f=[Math.sin(camYaw),Math.cos(camYaw)],rt=[-Math.cos(camYaw),Math.sin(camYaw)];
+    let mx=f[0]*ay+rt[0]*ax,mz=f[1]*ay+rt[1]*ax;const m=Math.hypot(mx,mz);
+    if(m>.05){mx/=m;mz/=m;const sp=run?9:5;const r=hitB(me.x+mx*sp*dt,me.z+mz*sp*dt,.8);me.x=r.x;me.z=r.z;me.a+=angD(me.a,Math.atan2(mx,mz))*Math.min(1,dt*12);me.anim+=dt*(run?14:9)}else me.anim*=.9}
+  for(const c of cars)if(c.ai)aiStep(c,dt);pedStep(dt);
+  // модели
+  me.g.position.set(me.x,0,me.z);me.g.rotation.y=me.a;animMan(me.g,me.car?0:Math.sin(me.anim)*(Math.abs(ay)+Math.abs(ax)>.1?1:0));
+  for(const c of cars){c.g.position.set(c.x,0,c.z);c.g.rotation.y=c.a}
+  // миссия
+  const pr=$('pr');let ptxt='';
+  if(Math.hypot(me.x-MAYOR.x,me.z-MAYOR.z)<30)ptxt=S.job?'E — уволиться из курьеров':'E — устроиться курьером';
+  else if(!me.car){let b=null,bd=6;for(const c of cars){const d=Math.hypot(c.x-me.x,c.z-me.z);if(d<bd){bd=d;b=c}}if(b)ptxt='F — сесть в машину'}
+  pr.style.display=ptxt?'block':'none';pr.textContent=ptxt;
+  if(mission&&Math.hypot(T.x-mission.x,T.z-mission.z)<6){const p=Math.round(100+Math.hypot(mission.x-MAYOR.x,mission.z-MAYOR.z)*.5);S.cash+=p;S.done++;line('Заказ доставлен: +'+money(p),'pay');if(S.done%4===0){S.lvl++;toast('Новый уровень: '+S.lvl)}next()}
+  if(S.hp<=0)die();
+  payT-=dt;if(payT<=0){payT=60;pay()}
+  // камера
+  if(camDrag>0)camDrag-=dt;else if(me.car)camYaw+=angD(camYaw,me.car.a)*Math.min(1,dt*2.5);
+  const dist=me.car?11:7,hh=me.car?5:3.5;
+  cam.position.lerp(new THREE.Vector3(T.x-Math.sin(camYaw)*dist,hh,T.z-Math.cos(camYaw)*dist),Math.min(1,dt*8));
+  cam.lookAt(T.x,1.6,T.z);
+}
+function animMan(g,s){const u=g.u;u.l.rotation.x=s*.7;u.r.rotation.x=-s*.7;u.lk.rotation.x=Math.max(0,s)*.9;u.rk.rotation.x=Math.max(0,-s)*.9;u.a1.rotation.x=-s*.6;u.a2.rotation.x=s*.6}
+
+// ---------- онлайн ----------
+let net=null;const rem=new Map();
+function mkRemote(p){const g=new THREE.Group(),man=mkMan(p.presence.k||0x2980b9),car=mkCar(p.presence.k||0x2980b9);car.visible=false;g.add(man,car);
+  const nn=String(p.presence.n||'Игрок'),mm=nn.match(/^(.*)\[(\d+)\]$/),t=plate(mm?mm[1]:nn,mm?mm[2]:0,Math.min(99,+p.presence.l||1),'Criminal City',false);t.scale.set(7,2.73,1);t.position.y=4.2;g.add(t);scene.add(g);return{g,man,car,tx:0,tz:0,ta:0,ready:false}}
+function syncPeers(ch){for(const p of ch.left){const r=rem.get(p.peer);if(r){scene.remove(r.g);rem.delete(p.peer)}line((p.presence&&p.presence.n||'Игрок')+' покинул сервер','sys')}
+  for(const p of ch.peers){if(p.isMe||!p.presence||p.presence.x==null)continue;let r=rem.get(p.peer);
+    if(!r){r=mkRemote(p);rem.set(p.peer,r);line(String(p.presence.n)+' вошёл на сервер','sys')}
+    const q=p.presence;r.tx=q.x;r.tz=q.z;r.ta=q.a;r.inCar=!!q.c;if(!r.ready){r.g.position.set(q.x,0,q.z);r.ready=true}}}
+async function connect(){try{const rm=await claude.use('room');if(!rm)return;let R2=rm;try{R2=(await rm.join('ccrp-main'))||rm}catch(e){}
+  net=R2;net.on('chat',m=>{if(m.isMe||!m.data)return;line(String(m.data.t).slice(0,160),m.data.k==='me'?'me':'')});net.onPeers(syncPeers);
+  setInterval(()=>{if(!running)return;net.presence({n:S.name+'['+S.id+']',x:+me.x.toFixed(2),z:+me.z.toFixed(2),a:+me.a.toFixed(2),c:me.car?1:0,k:me.car?me.car.col:S.col,l:S.lvl}).catch(()=>{})},120);
+  line('Подключено к серверу. Игроки видят вас в реальном времени.','sys')}catch(e){net=null}}
+function remoteUpdate(dt){for(const r of rem.values()){const g=r.g;g.position.x+=(r.tx-g.position.x)*Math.min(1,dt*9);g.position.z+=(r.tz-g.position.z)*Math.min(1,dt*9);g.rotation.y+=angD(g.rotation.y,r.ta)*Math.min(1,dt*9);
+  r.car.visible=r.inCar;r.man.visible=!r.inCar;if(!r.inCar){const d=Math.hypot(r.tx-g.position.x,r.tz-g.position.z);animMan(r.man,Math.sin(performance.now()/110)*Math.min(1,d*2))}}}
+
+// ---------- старт и цикл ----------
+function hud(){const on=[...rem.values()].length+1;
+  $('tl').innerHTML='<b></b><br>Наличные: <span id="cs"></span><div class="bar"><i id="hp"></i></div>';
+  $('tl').firstChild.textContent=S.name+'['+S.id+']';$('cs').textContent=money(S.cash);$('hp').style.width=clamp(S.hp,0,100)+'%';
+  const jb=S.job&&mission?'Курьер: '+Math.round(Math.hypot(me.x-mission.x,me.z-mission.z))+' м до клиента':S.job?'Курьер':'Безработный';
+  $('tr').textContent='Онлайн: '+on+' · Ур. '+S.lvl+' · PayDay '+Math.ceil(payT)+'с\n'+jb;$('tr').style.whiteSpace='pre'}
+$('go').onclick=()=>{const n=$('nick').value.trim();if(!/^[A-Za-z]{2,}_[A-Za-z]{2,}$/.test(n)){$('er').textContent='Ник должен быть вида Имя_Фамилия (латиница)';return}
+  S.name=n;try{const s=JSON.parse(localStorage.getItem('ccrp3d_'+n));if(s){S.cash=s.cash??S.cash;S.lvl=s.lvl??S.lvl;S.done=s.done??S.done;S.bank=s.bank||0;S.skin=s.skin||0}}catch(e){}
+  $('st').style.display='none';running=true;connect();line('Добро пожаловать, '+n+'! Идите к Мэрии и нажмите E. /help — команды.','sys');line('Администратор Daniil_Gotti[167] посадил игрока Benvanan801 на 30 мин','adm');line('_PETKA_MOVALOLA[88]: спс бро')};
+setInterval(()=>{if(running)try{localStorage.setItem('ccrp3d_'+S.name,JSON.stringify({cash:S.cash,lvl:S.lvl,done:S.done,bank:S.bank||0,skin:S.skin||0}))}catch(e){}},5000);
+let last=performance.now(),hudTick=0;cam.position.set(MAYOR.x,8,MAYOR.z-40);
+(function loop(t){requestAnimationFrame(loop);const dt=Math.min(.05,(t-last)/1000);last=t;
+  if(running){update(dt);remoteUpdate(dt);hudTick+=dt;if(hudTick>.12){hud();hudTick=0}}else{cam.position.set(MAYOR.x+Math.sin(t/6000)*60,40,MAYOR.z+Math.cos(t/6000)*60);cam.lookAt(MAYOR.x,5,MAYOR.z);for(const c of cars)if(c.ai){aiStep(c,dt);c.g.position.set(c.x,0,c.z);c.g.rotation.y=c.a}}
+  sky.position.copy(cam.position);sunS.position.copy(cam.position).addScaledVector(sunDir,440);sun.target.position.set(me.x,0,me.z);sun.position.set(me.x+70,120,me.z+45);ren.render(scene,cam)})(last);
+
+// ---------- расширенная RP-система: меню, банк, гараж, мини-карта, цикл суток ----------
+S.bank=S.bank||0;S.skin=S.skin||0;S.day=1;
+const menu=$('cityMenu'),mini=$('mini'),mx=mini.getContext('2d');
+$('menuToggle').onclick=()=>menu.style.display=menu.style.display==='block'?'none':'block';
+$('mClose').onclick=()=>menu.style.display='none';
+function nearMayor(){return Math.hypot(me.x-MAYOR.x,me.z-MAYOR.z)<34}
+function saveNow(){try{localStorage.setItem('ccrp3d_'+S.name,JSON.stringify({cash:S.cash,lvl:S.lvl,done:S.done,bank:S.bank,skin:S.skin}));toast('Прогресс сохранён')}catch(e){toast('Не удалось сохранить')}}
+$('mSave').onclick=saveNow;
+$('mBank').onclick=()=>{if(!nearMayor()){toast('Банк находится в здании Мэрии');return}if(S.cash>=500){S.cash-=500;S.bank+=500;line('Банк: внесено $500. Баланс: '+money(S.bank),'sys')}else if(S.bank>=500){S.bank-=500;S.cash+=500;line('Банк: снято $500. Баланс: '+money(S.bank),'pay')}else toast('Нужно иметь $500 наличными или на счёте');saveNow()};
+$('mJob').onclick=()=>{if(!nearMayor()){toast('Подойдите к Мэрии, чтобы устроиться на работу');return}S.job=!S.job;if(S.job){next();toast('Вы устроились курьером')}else{clearM();toast('Вы уволились')};menu.style.display='none'};
+$('mGarage').onclick=()=>{if(S.cash<500){toast('Для покупки служебного авто нужно $500');return}S.cash-=500;let c=newCar(pk([0x174a78,0x8d2020,0x20252b,0xc7a52a,0xe6e6e6]));c.ai=false;c.x=me.x+Math.sin(me.a)*5;c.z=me.z+Math.cos(me.a)*5;c.a=me.a;c.g.position.set(c.x,0,c.z);toast('Автомобиль доставлен в гараж');line('Гараж: приобретён автомобиль за $500','pay');menu.style.display='none';saveNow()};
+$('mSkin').onclick=()=>{S.skin=(S.skin+1)%6;const colors=[0xe5483f,0x2874a6,0x229954,0x8e44ad,0xd4ac0d,0xeeeeee];scene.remove(me.g);me.g=mkMan(colors[S.skin]);scene.add(me.g);toast('Новый образ выбран');menu.style.display='none';saveNow()};
+// День/ночь: мягкое изменение цвета неба и освещения без тяжёлых постэффектов.
+let worldClock=8*60,dayCounter=1;
+const nightColor=new THREE.Color(0x101a35),dayColor=new THREE.Color(0xb9ecfb),sunDay=new THREE.Color(0xfff0d0),sunNight=new THREE.Color(0x8099d8);
+function updateWorld(dt){worldClock=(worldClock+dt*2.2)%1440;const h=worldClock/60,night=(h<6||h>19)?1:0;const k=(Math.sin((h-6)/13*Math.PI)+1)/2;scene.fog.color.copy(nightColor).lerp(dayColor,k);scene.background=scene.fog.color;sun.color.copy(sunNight).lerp(sunDay,k);sun.intensity=.22+k*.92;scene.fog.near=night?65:120;scene.fog.far=night?250:420;sun.position.set(me.x+Math.cos(h/24*TAU)*100,Math.max(25,Math.sin(h/24*TAU)*120),me.z+55);$('statsExtra').textContent='Los Santos District · День '+dayCounter+' · '+String(Math.floor(h)).padStart(2,'0')+':'+String(Math.floor((h%1)*60)).padStart(2,'0')+' · Банк '+money(S.bank)}
+// Мини-карта показывает дороги, район, игрока и миссионную точку.
+function drawMini(){const w=mini.width,h=mini.height,cx=w/2,cy=h/2,scale=1.35;mx.clearRect(0,0,w,h);mx.fillStyle='#18242b';mx.fillRect(0,0,w,h);mx.save();mx.translate(cx-me.x*scale,cy-me.z*scale);mx.scale(scale,scale);mx.fillStyle='#39434a';for(let i=0;i<=N;i++){mx.fillRect(i*P-RW/2,-100,RW,W+200);mx.fillRect(-100,i*P-RW/2,W+200,RW)}mx.fillStyle='#657078';for(const b of B){mx.fillRect(b[0],b[2],b[1]-b[0],b[3]-b[2])}mx.fillStyle='#d8aa43';mx.beginPath();mx.arc(MAYOR.x,MAYOR.z,4,0,TAU);mx.fill();if(mission){mx.fillStyle='#ffdd45';mx.beginPath();mx.arc(mission.x,mission.z,3,0,TAU);mx.fill()}mx.fillStyle='#ff5148';for(const c of cars){if(Math.hypot(c.x-me.x,c.z-me.z)<45){mx.beginPath();mx.arc(c.x,c.z,1.7,0,TAU);mx.fill()}}mx.restore();mx.fillStyle='#54e1ff';mx.beginPath();mx.arc(cx,cy,5,0,TAU);mx.fill();mx.strokeStyle='#fff';mx.lineWidth=2;mx.stroke();}
+let extraTick=0;
+const baseUpdate=update;
+update=function(dt){baseUpdate(dt);updateWorld(dt);extraTick+=dt;if(extraTick>.18){drawMini();extraTick=0}};
+// Дополнительные команды RP и экономические подсказки.
+const baseSend=send;
+send=function(t){const raw=t.trim().toLowerCase();if(raw==='/bank'){line('Банк: '+money(S.bank)+'. Подойдите к Мэрии и используйте меню города.','sys');return}if(raw==='/garage'){line('Гараж: меню ГОРОД → получить автомобиль за $500.','sys');return}if(raw==='/save'){saveNow();return}baseSend(t)};
+// Подсказка о расширенных действиях на мобильном устройстве.
+line('Новые системы: меню ГОРОД — гараж, банк, одежда и сохранение.','sys');
+
+</script></body></html>
